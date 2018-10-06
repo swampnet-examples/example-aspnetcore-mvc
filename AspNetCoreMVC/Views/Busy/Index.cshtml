@@ -1,0 +1,41 @@
+﻿
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div>
+    @using (Html.BeginForm("Download", "Busy"))
+    {
+        @Html.Hidden("cookieValue")
+        <input type="submit" id="btnDownload" value="Download!" />
+    }
+
+    <div class="modal"><span>Please wait...</span></div>
+</div>
+
+@section Scripts{
+    <script>
+        $(function () {
+            $('#btnDownload').click(function () {
+
+                // save timestamp in hidden field
+                $('#cookieValue').val(Date.now().toString());
+
+                // show animation
+                $('body').addClass("loading");
+
+                // start timer to wait for cookie
+                var tmr = window.setInterval(function () {
+                    var str = 'dlc=' + $('#cookieValue').val();
+                    if (document.cookie.indexOf(str) !== -1) {
+                        // hide animation
+                        $('body').removeClass("loading");
+                        clearInterval(tmr);
+                    }
+                }, 100);
+            });
+        });
+    </script>
+
+}
+
