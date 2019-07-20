@@ -71,3 +71,11 @@ body.loading {
     top: -110px;
     font-size: 1.5em;
     font-weight: bold;
+}
+
+
+div.test{
+    margin:20px;
+    padding:20px;
+    background-color:azure;
+}
