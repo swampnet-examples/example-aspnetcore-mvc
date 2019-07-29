@@ -31,13 +31,20 @@
         var redact = false;
         var pan = false;
 
+        // We don't get movementX/Y properties on mouse move under IE, so keep track of it ourselves.
+        var prevX = 0;
+        var prevY = 0;
+
+        // Capture drag values
         var startX;
         var startY;
         var endX;
         var endY;
 
+        // Panning & zooming
         var panX = 0;
         var panY = 0;
+        var scale = 1.0;
 
         var redactions = new Array();
         var imageSource = new Image();
@@ -51,12 +58,10 @@
         imageSource.src = "/images/canvas-buffer/x.jpg";
 
         function redraw() {
-            //console.log("w: " + imageSource.width + ", h: " + imageSource.height);
-
             context.clearRect(0, 0, canvas.width, canvas.height);
             context.save();
             context.translate(panX, panY);
-            //context.scale(scaleFactor, scaleFactor);
+            context.scale(scale, scale);
 
             context.drawImage(imageSource, 0, 0, context.canvas.width, context.canvas.height);
 
@@ -89,8 +94,8 @@
             startY = e.pageY - this.offsetTop;
             endX = startX;
             endY = startY;
-
-            console.log("pan (" + panX + ", " + panY + ")")
+            prevX = 0;
+            prevY = 0;
 
             // Left mouse button
             if (e.button === 0) {
@@ -106,7 +111,14 @@
             }
         });
 
+
         $('#canvas').mousemove(function (e) {
+            // We don't get movementX/Y properties on mouse move under IE, so keep track of it ourselves.
+            var movementX = (prevX ? e.screenX - prevX : 0)
+            var movementY = (prevY ? e.screenY - prevY : 0)
+            prevX = e.screenX;
+            prevY = e.screenY;
+
             endX = e.pageX - this.offsetLeft;
             endY = e.pageY - this.offsetTop;
 
@@ -115,29 +127,53 @@
             }
 
             if (pan) {
+                panX += movementX;
+                panY += movementY;
                 onPan();
             }
         });
 
+
         $('#canvas').mouseup(function (e) {
             if (redact) {
                 redact = false;
-                console.log("end-redact: (" + startX + ", " + startY + ") -> (" + endX + ", " + endY + ")");
+                console.log("end-redact: (" + startX + ", " + startY + ") -> (" + endX + ", " + endY + ") - scale: " + scale);
 
-                // @@todo: This needs translating based on zoom / pan
-                redactions.push({
-                    x: startX - panX,
-                    y: startY - panY,
-                    w: endX - startX,
-                    h: endY - startY
-                });
+                var x = (startX - panX) / scale;
+                var y = (startY - panY) / scale;
+                var w = (endX - startX) / scale;
+                var h = (endY - startY) / scale;
+
+                // redaction area covers at least part of the image
+                if (x < imageSource.width && y < imageSource.height && x + w > 0 && y + h > 0) {
+                    // clip redaction area if it falls off the edge of the image
+                    if (x < 0) {
+                        w = w + x;
+                        x = 0;
+                    }
+                    if (y < 0) {
+                        h = h + y;
+                        y = 0;
+                    }
+                    if (x + w > imageSource.width) {
+                        w = imageSource.width - x;
+                    }
+                    if (y + h > imageSource.height) {
+                        h = imageSource.height - y;
+                    }
+
+                    redactions.push({
+                        x: x,
+                        y: y,
+                        w: w,
+                        h: h
+                    });
+                }
+
             }
 
             if (pan) {
                 pan = false;
-                panX += endX - startX;
-                panY += endY - startY;
-                console.log("end-pan: (" + panX + ", " + panY + ")");
             }
 
             redraw();
@@ -148,6 +184,30 @@
                 redact = false;
                 redraw();
             }
+        });
+
+
+        $('#canvas').on('wheel', function(event){
+          // deltaY obviously records vertical scroll, deltaX and deltaZ exist too
+            var oldscale = scale;
+
+            if(event.originalEvent.deltaY < 0){
+                scale += 0.1;
+            }
+            else {
+                scale -= 0.1;
+                if (scale < 1) {
+                    scale = 1;
+                }
+            }
+
+            console.log("scale - mse: (" + event.originalEvent.x + ", " + event.originalEvent.y + ")");
+            // @@TODO: When zooming in, pan across towards wherever the mouse curser is....
+            //var scalechange = scale - oldscale;
+            //panX = -(event.originalEvent.x * scalechange);
+            //panY = -(event.originalEvent.y * scalechange);
+
+            redraw();
         });
     </script>
 
