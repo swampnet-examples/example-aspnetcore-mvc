@@ -4,10 +4,11 @@
     ViewData["Title"] = "Canvas";
 }
 
-<h2>Canvas</h2>
+    <div style="margin:10px">
+        <canvas id="canvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
+    </div>
 
-<canvas id="canvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
-<button id="undo">oops</button>
+    <button id="undo">oops</button>
 
 @section Scripts{
 
@@ -20,12 +21,12 @@
         });
     </script>
 
-    <script src="~/js/trackTransforms.js"></script>
+    @*<script src="~/js/trackTransforms.js"></script>*@
 
     <script>
         var context = $("#canvas")[0].getContext("2d");
 
-        trackTransforms(context);
+        //trackTransforms(context);
 
         var redact = false;
         var pan = false;
@@ -34,6 +35,9 @@
         var startY;
         var endX;
         var endY;
+
+        var panX = 0;
+        var panY = 0;
 
         var redactions = new Array();
         var imageSource = new Image();
@@ -49,13 +53,12 @@
         function redraw() {
             //console.log("w: " + imageSource.width + ", h: " + imageSource.height);
 
-            var p1 = context.transformedPoint(0,0);
-			var p2 = context.transformedPoint(canvas.width,canvas.height);
-			context.clearRect(p1.x,p1.y,p2.x-p1.x,p2.y-p1.y);
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.save();
+            context.translate(panX, panY);
+            //context.scale(scaleFactor, scaleFactor);
 
-            //context.clearRect(0, 0, context.canvas.width, context.canvas.height);
             context.drawImage(imageSource, 0, 0, context.canvas.width, context.canvas.height);
-
 
             for (var i = 0; i < redactions.length; i++) {
                 context.beginPath();
@@ -64,7 +67,7 @@
                 context.stroke();
             }
 
-            //console.log("context.canvas.width: " + context.canvas.width + ", context.canvas.height: " + context.canvas.height);
+            context.restore();
         }
 
 
@@ -78,14 +81,16 @@
         }
 
         function onPan() {
-
+            redraw();
         }
 
         $('#canvas').mousedown(function (e) {
-                startX = e.pageX - this.offsetLeft;
-                startY = e.pageY - this.offsetTop;
-                endX = startX;
-                endY = startY;
+            startX = e.pageX - this.offsetLeft;
+            startY = e.pageY - this.offsetTop;
+            endX = startX;
+            endY = startY;
+
+            console.log("pan (" + panX + ", " + panY + ")")
 
             // Left mouse button
             if (e.button === 0) {
@@ -97,7 +102,8 @@
             else if (e.button === 2) {
                 pan = true;
                 console.log("start-pan (" + startX + ", " + startY + ")");
-                onPan();            }
+                onPan();
+            }
         });
 
         $('#canvas').mousemove(function (e) {
@@ -118,20 +124,23 @@
                 redact = false;
                 console.log("end-redact: (" + startX + ", " + startY + ") -> (" + endX + ", " + endY + ")");
 
+                // @@todo: This needs translating based on zoom / pan
                 redactions.push({
-                    x: startX,
-                    y: startY,
+                    x: startX - panX,
+                    y: startY - panY,
                     w: endX - startX,
                     h: endY - startY
                 });
-
-                redraw();
             }
 
             if (pan) {
                 pan = false;
-                console.log("end-pan: (" + startX + ", " + startY + ") -> (" + endX + ", " + endY + ")");
+                panX += endX - startX;
+                panY += endY - startY;
+                console.log("end-pan: (" + panX + ", " + panY + ")");
             }
+
+            redraw();
         });
 
         $('#canvas').mouseleave(function (e) {
