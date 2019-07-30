@@ -22,14 +22,15 @@ namespace AspNetCoreMVC.Controllers
 
         public IActionResult Index()
         {
-            var source = Path.Combine(Path.Combine(_env.WebRootPath, "images"), "test-01.jpg");
+            var img = "grid.png";
+            var source = Path.Combine(Path.Combine(_env.WebRootPath, "images"), img);
             var dest = Path.Combine(Path.Combine(Path.Combine(_env.WebRootPath, "images"), "canvas-buffer"), "x.jpg");
 
             // Resize and save a copy
             using (var image = Image.Load(source))
             {
-                image.Mutate(x => x
-                     .Resize(image.Width / 2, image.Height / 2));
+                //image.Mutate(x => x
+                //     .Resize(image.Width / 2, image.Height / 2));
 
                 image.Save(dest);
             }

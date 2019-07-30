@@ -79,3 +79,10 @@ div.test{
     padding:20px;
     background-color:azure;
 }
+
+div.debug{
+    margin:10px;
+    padding:10px;
+    background-color:azure;
+    font-size:x-small;
+}

@@ -4,11 +4,16 @@
     ViewData["Title"] = "Canvas";
 }
 
+<div class="debug" id="debug"></div>
+
 <div style="margin:10px">
-    <canvas id="canvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
+    <canvas id="canvas" style="border:2px solid #0000AA;"></canvas>
 </div>
 
-<button id="undo">oops</button>
+
+<button id="undo">undo</button>
+<button id="zoom-in">+</button>
+<button id="zoom-out">-</button>
 
 @section Scripts{
     <script src="~/js/canvas.js"></script>

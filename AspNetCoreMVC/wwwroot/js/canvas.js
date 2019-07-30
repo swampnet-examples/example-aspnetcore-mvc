@@ -49,6 +49,16 @@ function redraw() {
     }
 
     context.restore();
+
+    // R&D - Find the x/y offset for the center of the image
+    var centerX = panX + (imageSource.width / 2 * scale);
+    var centerY = panY + (imageSource.height / 2 * scale);
+  
+    var html = "<strong>pan</strong>: (" + Math.round(panX * 100) / 100 + ", " + Math.round(panY * 100) / 100 + ") <strong>scale</strong>: " + Math.round(scale * 100) / 100;
+    html += "<br/><strong>image</strong> (" + imageSource.width + ", " + imageSource.height + ")";
+    html += "<br/><strong>center</strong>: (" + Math.round(centerX * 100) / 100 + ", " + Math.round(centerY * 100) / 100 + ")";
+
+    $('#debug').html(html);
 }
 
 
@@ -86,6 +96,7 @@ $('#canvas').mousedown(function (e) {
 
 
 $('#canvas').mousemove(function (e) {
+
     // We don't get movementX/Y properties on mouse move under IE, so keep track of it ourselves.
     var movementX = prevX ? e.screenX - prevX : 0;
     var movementY = prevY ? e.screenY - prevY : 0;
@@ -158,6 +169,7 @@ $('#canvas').mouseup(function (e) {
 
     if (pan) {
         pan = false;
+        console.log("end-pan (" + panX + ", " + panY + ")");
     }
 
     redraw();
@@ -186,13 +198,23 @@ $('#canvas').on('wheel', function (event) {
         }
     }
 
-    console.log("scale - mse: (" + event.originalEvent.x + ", " + event.originalEvent.y + ")");
-    // @@TODO: When zooming in, pan across towards wherever the mouse curser is....
-    //var scalechange = scale - oldscale;
-    //panX = -(event.originalEvent.x * scalechange);
-    //panY = -(event.originalEvent.y * scalechange);
+    var scalechange = scale - oldscale;
 
+    // Zoom in towards mouse position
+    if (scalechange > 0) {
+        panX += -(endX * scalechange);
+        panY += -(endY * scalechange);
+    }
+    // Zoom out towards (0,0)
+    else {
+        // @todo: Figure this out...
+    }
+
+    console.log("pos: (" + endX + ", " + endY + ") pan: (" + panX + ", " + panY + ") s: " + scale + ", sc: " + scalechange);
     redraw();
+
+    // prevent window scrolling
+    return false;
 });
 
 // Disable context menu
@@ -204,5 +226,28 @@ $("#canvas").bind('contextmenu', function (e) {
 // Hook up undo
 $("#undo").click(function () {
     redactions.pop();
+    redraw();
+});
+
+
+$("#zoom-in").click(function () {
+    var scalechange = 0.2;
+    scale += scalechange;
+
+    //@todo: pan towards centre of screen
+    var x = panX + (context.canvas.width / 2);
+    var y = panY + (context.canvas.height / 2);
+
+    panX += -(x * scalechange);
+    panY += -(y * scalechange);
+
+    redraw();
+});
+
+
+$("#zoom-out").click(function () {
+    var scalechange = -0.2;
+    scale += scalechange;
+
     redraw();
 });
