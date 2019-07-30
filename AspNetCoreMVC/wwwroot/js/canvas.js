@@ -73,28 +73,20 @@ function drawRedactionBounds() {
 
 
 function panAndScale(x, y, z) {
-    var oldscale = scale;
-
     scale += z;
     if (scale < 1) {
         scale = 1;
     }
 
-    var scalechange = scale - oldscale;
+    // @todo: If scale == 1 and we're zooming out, we should be trying to re-center the image
+    //        which means heading towards panX/panY = 0
+    panX += -(x * z);
+    panY += -(y * z);
 
-    // Zoom in towards (x,y)
-    if (scalechange > 0) {
-        panX += -(x * scalechange);
-        panY += -(y * scalechange);
-    }
-    // Zoom out towards (0,0)
-    else {
-        // @todo: Figure this out...
-    }
-
-    console.log("pos: (" + x + ", " + y + ") pan: (" + panX + ", " + panY + ") s: " + scale + ", sc: " + scalechange);
+    console.log("pos: (" + x + ", " + y + ") pan: (" + panX + ", " + panY + ") s: " + scale + ", z: " + z);
     redraw();
 }
+
 
 $('#canvas').mousedown(function (e) {
     startX = e.pageX - this.offsetLeft;
@@ -216,6 +208,7 @@ $('#canvas').on('wheel', function (event) {
     return false;
 });
 
+
 // Disable context menu
 $("#canvas").bind('contextmenu', function (e) {
     return false;
@@ -237,11 +230,11 @@ $("#zoom-in").click(function () {
 
 
 $("#zoom-out").click(function () {
-    var scalechange = -0.2;
-    scale += scalechange;
-
-    redraw();
+    var x = imageSource.width / 2;
+    var y = imageSource.height / 2;
+    panAndScale(x, y, -0.1);
 });
+
 
 $("#rotate").click(function (e) {
     $.post(

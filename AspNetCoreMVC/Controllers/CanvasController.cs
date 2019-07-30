@@ -16,9 +16,9 @@ namespace AspNetCoreMVC.Controllers
         private readonly IHostingEnvironment _env;
         private readonly int _scale = 1;
         private readonly int _blurSize = 5;
-        private readonly string _img = "test-01.jpg";
+        //private readonly string _img = "test-01.jpg";
         //private readonly string _img = "oct-01.jpg";
-        //private readonly string _img = "grid.png";
+        private readonly string _img = "grid.png";
 
         public CanvasController(IHostingEnvironment env)
         {
@@ -63,7 +63,6 @@ namespace AspNetCoreMVC.Controllers
 
                 image.Mutate(x => x
                      .Resize(image.Width / _scale, image.Height / _scale));
-
                 image.Save(dest);
             }
 
