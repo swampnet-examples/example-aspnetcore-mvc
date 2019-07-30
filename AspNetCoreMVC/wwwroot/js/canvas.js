@@ -55,8 +55,8 @@ function redraw() {
     var centerY = panY + (imageSource.height / 2 * scale);
   
     var html = "<strong>pan</strong>: (" + Math.round(panX * 100) / 100 + ", " + Math.round(panY * 100) / 100 + ") <strong>scale</strong>: " + Math.round(scale * 100) / 100;
-    html += "<br/><strong>image</strong> (" + imageSource.width + ", " + imageSource.height + ")";
     html += "<br/><strong>center</strong>: (" + Math.round(centerX * 100) / 100 + ", " + Math.round(centerY * 100) / 100 + ")";
+    html += "<br/><strong>image</strong> (" + imageSource.width + ", " + imageSource.height + ")";
 
     $('#debug').html(html);
 }
@@ -71,6 +71,30 @@ function drawRedactionBounds() {
     context.stroke();
 }
 
+
+function panAndScale(x, y, z) {
+    var oldscale = scale;
+
+    scale += z;
+    if (scale < 1) {
+        scale = 1;
+    }
+
+    var scalechange = scale - oldscale;
+
+    // Zoom in towards (x,y)
+    if (scalechange > 0) {
+        panX += -(x * scalechange);
+        panY += -(y * scalechange);
+    }
+    // Zoom out towards (0,0)
+    else {
+        // @todo: Figure this out...
+    }
+
+    console.log("pos: (" + x + ", " + y + ") pan: (" + panX + ", " + panY + ") s: " + scale + ", sc: " + scalechange);
+    redraw();
+}
 
 $('#canvas').mousedown(function (e) {
     startX = e.pageX - this.offsetLeft;
@@ -186,32 +210,7 @@ $('#canvas').mouseleave(function (e) {
 
 // Handle mouse wheel zoom in / out
 $('#canvas').on('wheel', function (event) {
-    var oldscale = scale;
-
-    if (event.originalEvent.deltaY < 0) {
-        scale += 0.1;
-    }
-    else {
-        scale -= 0.1;
-        if (scale < 1) {
-            scale = 1;
-        }
-    }
-
-    var scalechange = scale - oldscale;
-
-    // Zoom in towards mouse position
-    if (scalechange > 0) {
-        panX += -(endX * scalechange);
-        panY += -(endY * scalechange);
-    }
-    // Zoom out towards (0,0)
-    else {
-        // @todo: Figure this out...
-    }
-
-    console.log("pos: (" + endX + ", " + endY + ") pan: (" + panX + ", " + panY + ") s: " + scale + ", sc: " + scalechange);
-    redraw();
+    panAndScale(endX, endY, event.originalEvent.deltaY < 0 ? 0.1 : -0.1);
 
     // prevent window scrolling
     return false;
@@ -231,17 +230,9 @@ $("#undo").click(function () {
 
 
 $("#zoom-in").click(function () {
-    var scalechange = 0.2;
-    scale += scalechange;
-
-    //@todo: pan towards centre of screen
-    var x = panX + (context.canvas.width / 2);
-    var y = panY + (context.canvas.height / 2);
-
-    panX += -(x * scalechange);
-    panY += -(y * scalechange);
-
-    redraw();
+    var x = imageSource.width / 2;
+    var y = imageSource.height / 2;
+    panAndScale(x, y, 0.1);
 });
 
 
@@ -250,4 +241,42 @@ $("#zoom-out").click(function () {
     scale += scalechange;
 
     redraw();
+});
+
+$("#rotate").click(function (e) {
+    $.post(
+        "/canvas/rotate",
+        {
+            Id: '12345',
+            Redactions: redactions
+        })
+        .done(function (data) {
+            redactions = new Array();
+            panX = 0;
+            panY = 0;
+            scale = 1.0;
+            imageSource.src = "/images/canvas-buffer/x.jpg?t=" + new Date().getMilliseconds();
+        });
+
+    e.preventDefault();
+});
+
+
+$("#save").click(function (e) {
+    $.post(
+        "/canvas",
+        {
+            Id: '12345',
+            Redactions: redactions
+        })
+        .done(function (data) {
+            // Just reloading for now
+            redactions = new Array();
+            panX = 0;
+            panY = 0;
+            scale = 1.0;
+            imageSource.src = "/images/canvas-buffer/x.jpg?t=" + new Date().getMilliseconds();
+        });
+
+    e.preventDefault();
 });
